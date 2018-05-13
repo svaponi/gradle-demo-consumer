@@ -1,0 +1,62 @@
+group 'io.github.svaponi'
+version '1.0'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+// specific repositories on Artifactory
+def release_repo = 'libs-release'
+def snapshot_repo = 'libs-snapshot'
+
+// create file ~/.gradle/gradle.properties with following properties
+/*
+    remote_repository_baseurl=YOUR_REMOTE_REPOSITORY_URL
+    remote_repository_username=YOUR_REMOTE_REPOSITORY_USERNAME
+    remote_repository_password=YOUR_REMOTE_REPOSITORY_ENCRYPTED_PASSWORD
+*/
+
+repositories {
+    mavenLocal()
+    maven {
+        url "${remote_repository_baseurl}/${release_repo}"
+        credentials {
+            username remote_repository_username
+            password remote_repository_password // password may be encrypted
+        }
+    }
+    maven {
+        url "${remote_repository_baseurl}/${snapshot_repo}"
+        credentials {
+            username remote_repository_username
+            password remote_repository_password
+        }
+    }
+    mavenCentral()
+}
+
+dependencies {
+    compile 'io.github.svaponi:os-user-service:1.0'
+    testCompile 'junit:junit:4.12'
+}
+
+test {
+    dependsOn cleanTest
+    testLogging {
+        events 'passed' // show that tests are run in the command-line output
+        showStandardStreams true // show STDOUT
+        exceptionFormat 'full' // show exception details
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'io.github.svaponi.consumer.Main'
+    }
+    from {
+        // include dependencies into a single Jar
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
